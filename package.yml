@@ -1,0 +1,11 @@
+package: icecoder
+version: '0.1'
+author: Friends Of REDAXO
+supportpage:
+
+page:
+    title: ICEcoder
+    perm: admin
+    hasLayout: false
+    icon: rex-icon fa-code
+    linkAttr: { target: _blank }
