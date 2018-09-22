@@ -1,0 +1,42 @@
+<?php
+
+// check for a valid redaxo backend admin user session
+$baseUrl = 'https://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+$url = preg_replace('{icecoder(.*)}', 'redaxo/index.php?page=users/users&rex-api-call=has_user_session&perm=admin', $baseUrl);
+
+$passCookies = [];
+foreach($_COOKIE as $name => $value) {
+    $passCookies[] = $name. '='. $value;
+}
+$passCookies = implode(';', $passCookies);
+
+$curl = curl_init($url);
+curl_setopt($curl, CURLOPT_VERBOSE, 1);
+curl_setopt($curl, CURLOPT_COOKIE, $passCookies);
+curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+$json = curl_exec($curl);
+curl_close($curl);
+
+if (!$json || !($result = json_decode($json)) || !$result) {
+    echo('Login nur als REDAXO Admin erlaubt!');
+    exit();
+}
+
+// ICEcoder system settings
+$ICEcoderSettings = array(
+    "versionNo"		=> "6.0",
+    "codeMirrorDir"		=> "CodeMirror",
+    "docRoot"		=> $_SERVER['DOCUMENT_ROOT'],	// Set absolute path of another location if needed
+    "demoMode"		=> false,
+    "devMode"		=> false,
+    "fileDirResOutput"	=> "none",			// Can be none, raw, object, both (all but 'none' output to console)
+    "loginRequired"		=> false,
+    "password" => md5(uniqid(mt_rand(), true)),
+    "multiUser"		=> false,
+    "languageBase"		=> "english.php",
+    "lineEnding"		=> "\n",
+    "newDirPerms"		=> 755,
+    "newFilePerms"		=> 644,
+    "enableRegistration"	=> true
+);
+?>
