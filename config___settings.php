@@ -4,6 +4,7 @@
 $baseUrl = 'https://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
 $url = preg_replace('{icecoder(.*)}', 'redaxo/index.php?page=users/users&rex-api-call=has_user_session&perm=admin', $baseUrl);
 
+// passthru cookies, so the called api-function can determine the current users' session
 $passCookies = [];
 foreach($_COOKIE as $name => $value) {
     $passCookies[] = $name. '='. $value;
