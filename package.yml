@@ -9,3 +9,5 @@ page:
     hasLayout: false
     icon: rex-icon fa-code
     linkAttr: { target: _blank }
+requires:
+    redaxo: ^5.0.0
