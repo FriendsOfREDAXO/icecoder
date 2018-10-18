@@ -6,4 +6,10 @@ if (!rex_request::isHttps()) {
 }
 
 rex_dir::copy($this->getPath('vendor/icecoder'), rex_path::frontend('icecoder'));
-rex_file::copy($this->getPath('config___settings.php'), rex_path::frontend('icecoder/lib/'));
+
+// resolve the HOST at installation time, so we dont need to resolve it at login-time.
+// this makes sure noone can fake the auto-login url.
+$config = rex_file::get($this->getPath('config___settings.php'));
+$config = str_replace('%%HOST%%', $_SERVER['HTTP_HOST'], $config);
+rex_file::put(rex_path::frontend('icecoder/lib/config___settings.php'), $config);
+
