@@ -12,7 +12,7 @@ foreach($_COOKIE as $name => $value) {
 $passCookies = implode(';', $passCookies);
 
 $curl = curl_init($url);
-curl_setopt($curl, CURLOPT_VERBOSE, 1);
+// curl_setopt($curl, CURLOPT_VERBOSE, 1);
 curl_setopt($curl, CURLOPT_COOKIE, $passCookies);
 curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 
