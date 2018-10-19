@@ -12,7 +12,7 @@ REDAXO cms >= 5.7
 
 ## Installation
 
-Das AddOn kann über den Installer von REDACO installiert werden oder nach einem Download aus GitHub manuell installiert werden.  
+Das AddOn kann über den Installer von REDAXO oder nach einem Download aus GitHub manuell installiert werden.  
 
 >Aus Sicherheitsgründen wird die base-url für den Single-Sign-On (sso) bei Installation des AddOns fest in die Config geschrieben.
 D.h. wenn man lokal entwickelt und dann die Installation woanders hinkopiert muss man das AddOn re-installieren damit die sso-baseurl für die neue URL der Installation dann passt.
