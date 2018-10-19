@@ -10,4 +10,6 @@ page:
     icon: rex-icon fa-code
     linkAttr: { target: _blank }
 requires:
-    redaxo: ^5.0.0
+    redaxo: ^5.7.0
+    php:
+        extensions: [curl]
