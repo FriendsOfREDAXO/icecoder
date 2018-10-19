@@ -18,9 +18,9 @@ To install the AddOn, use the REDAXO Installer or install manually the current r
 
 ## Licenses
 
-AddOn:[MIT LICENSE](https://github.com/FriendsOfREDAXO/cke5/blob/master/LICENSE)
-ICEcoder[MIT LICENSE](https://github.com/icecoder/ICEcoder/blob/master/LICENSE.md)
-Codemirror[MIT LICENSE](https://github.com/codemirror/CodeMirror/blob/master/LICENSE)
+* AddOn:[MIT LICENSE](https://github.com/FriendsOfREDAXO/cke5/blob/master/LICENSE)
+* ICEcoder[MIT LICENSE](https://github.com/icecoder/ICEcoder/blob/master/LICENSE.md)
+* Codemirror[MIT LICENSE](https://github.com/codemirror/CodeMirror/blob/master/LICENSE)
 
 ## Authors
 
