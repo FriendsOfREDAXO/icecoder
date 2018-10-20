@@ -18,7 +18,7 @@ Das AddOn kann über den Installer von REDAXO oder nach einem Download aus GitHu
 D.h. wenn man lokal entwickelt und dann die Installation woanders hinkopiert muss man das AddOn re-installieren damit die sso-baseurl für die neue URL der Installation dann passt.
 ## Lizenzen
 
-* AddOn: [MIT LICENSE](https://github.com/FriendsOfREDAXO/cke5/blob/master/LICENSE)
+* AddOn [MIT LICENSE](https://github.com/FriendsOfREDAXO/cke5/blob/master/LICENSE)
 * ICEcoder [MIT LICENSE](https://github.com/icecoder/ICEcoder/blob/master/LICENSE.md)
 * Codemirror[ MIT LICENSE](https://github.com/codemirror/CodeMirror/blob/master/LICENSE)
 
