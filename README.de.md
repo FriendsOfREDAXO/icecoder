@@ -1,4 +1,4 @@
-# [ICEcoder ](https://icecoder.net) Addon für REDAXO 5.x
+# [ICEcoder ](https://icecoder.net) Addon für REDAXO
 
 ## Web IDE / browser code editor awesomeness
 
