@@ -1,5 +1,5 @@
 package: icecoder
-version: '1.0.0-beta1'
+version: '1.0.0'
 author: Friends Of REDAXO
 supportpage: https://github.com/FriendsOfREDAXO/icecoder
 
@@ -10,6 +10,6 @@ page:
     icon: rex-icon fa-code
     linkAttr: { target: _blank }
 requires:
-    redaxo: ^5.7.0-dev
+    redaxo: ^5.7.0-beta1
     php:
         extensions: [curl]
