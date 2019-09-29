@@ -42,6 +42,7 @@ var ICEcoder = {
 	tabFGopenFile:		'#000',		// FG of open file
 	tabFGnormalFile:	'#eee',		// FG of normal file
 	tabFGnormalTab:		'#888',		// FG of normal tab
+	prevTab:		0,		// Previous tab to current
 	serverQueueItems:	[],		// Array of URLs to call in order
 	miniMapBoxTop: 		0,		// Top of the minimap box highlighter
 	miniMapBoxHeight: 	0,		// Height of the minimap box highlighter
@@ -50,6 +51,8 @@ var ICEcoder = {
 	pluginIntervalRefs:	[],		// Array of plugin interval refs
 	overPopup:		false,		// Indicates if we're over a popup or not
 	cmdKey:			false,		// Tracking apple Command key up/down state
+	codeZoomedOut:		false,		// If true, code on non declaration lines is zoomed out
+	showingTool:		false,		// Which tool is showing right now (terminal, output, database, git etc)
 	oppTagReplaceData:	[],		// Will contain data for automatic opposite tag replacement to sync them
 	fmReady:		false,		// Indicates if the file manager is ready for action
 	bugReportStatus:	"off",		// Values of: off, error, ok, bugs
@@ -65,11 +68,12 @@ var ICEcoder = {
 	debounce:		"",		// Contains debounce timeout object
 	editorFocusInstance:	"",		// Name of editor instance that has focus
 	openSeconds:		0,		// Number of seconds ICEcoder has been open for
+	indexing:		false,		// Indicates if ICEcoder is currently indexing
 	ready:			false,		// Indicates if ICEcoder is ready for action
 
 	// Set our aliases
 	initAliases: function() {
-		var aliasArray = ["header","files", "fileOptions", "optionsFile", "optionsEdit", "optionsSource", "optionsHelp", "filesFrame", "editor", "tabsBar", "findBar", "content", "terminal", "footer", "nestValid", "versionsDisplay", "splitPaneControls", "splitPaneNamesMain", "splitPaneNamesDiff", "charDisplay", "byteDisplay", "docExplorer", "miniMap", "miniMapContainer", "miniMapContent", "functionClassList"];
+		var aliasArray = ["header","files", "fileOptions", "optionsFile", "optionsEdit", "optionsSource", "optionsHelp", "filesFrame", "editor", "tabsBar", "findBar", "terminal", "output", "database", "git", "content", "tools", "footer", "nestValid", "versionsDisplay", "splitPaneControls", "splitPaneNamesMain", "splitPaneNamesDiff", "charDisplay", "byteDisplay", "docExplorer", "miniMap", "miniMapContainer", "miniMapContent", "functionClassList"];
 
 		// Create our ID aliases
 		for (var i=0;i<aliasArray.length;i++) {
@@ -97,8 +101,7 @@ var ICEcoder = {
 		top.ICEcoder.showHide('hide',top.get('loadingMask'));
 		top.ICEcoder.autoOpenInt = setInterval(function() {
 			if (top.ICEcoder.fmReady) {
-				// Delay auto open process by 200ms to give trial bar time to begin animation
-				if (top.ICEcoder.openLastFiles) {setTimeout(function() {top.ICEcoder.autoOpenFiles()},200);};
+				if (top.ICEcoder.openLastFiles) {top.ICEcoder.autoOpenFiles();};
 				clearInterval(top.ICEcoder.autoOpenInt);
 			}
 		}, 4);
@@ -135,11 +138,24 @@ var ICEcoder = {
 			if(!unsavedFiles && ICEcoder.autoLogoutMins > 0 && top.ICEcoder.autoLogoutTimer >= top.ICEcoder.autoLogoutMins*60) {
 				top.ICEcoder.logout('autoLogout');
 			}
-			// Finally, increase number of seconds ICEcoder has been open for by 1
+			// Increase number of seconds ICEcoder has been open for by 1
 			top.ICEcoder.openSeconds++;
 			// Every 5 mins, ping our file to keep the session alive
 			if (top.ICEcoder.openSeconds % 300 == 0) {
 				top.ICEcoder.filesFrame.contentWindow.frames['pingActive'].location.href = "lib/session-active-ping.php";
+			}
+			// Every 3 seconds, re-index if we're not already busy
+			if (!top.ICEcoder.indexing && !top.ICEcoder.loadingFile && top.ICEcoder.serverQueueItems.length === 0 && top.ICEcoder.openSeconds % 3 == 0) {
+				top.ICEcoder.indexing = true;
+                		// Get new data
+				fetch('lib/indexer.php')
+				    .then(function(response) {
+				    // Convert to JSON
+				    return response.json();
+				}).then(function(data) {
+				    top.ICEcoder.indexData = data;
+				    top.ICEcoder.indexing = false;
+				});
 			}
 		},1000);
 
@@ -153,18 +169,18 @@ var ICEcoder = {
 
 	// Set our layout according to the browser size
 	setLayout: function(dontSetEditor) {
-		var winW, winH, headerH, fileNavH, tabsBarH, findBarH;
+		var winW, winH, headerH, fileNavH, tabsBarH, findBarH, toolsBarH;
 
 		// Determin width & height available
 		winW = window.innerWidth;
 		winH = window.innerHeight;
 
 		// Apply sizes to various elements of the page
-		headerH = 25, fileNavH = 35, tabsBarH = 21, findBarH = 28;
+		headerH = 25, fileNavH = 35, tabsBarH = 21, findBarH = 28, toolsBarH = 30;
 		this.header.style.width = this.tabsBar.style.width = this.findBar.style.width = winW + "px";
 		this.files.style.width = this.editor.style.left = this.filesW + "px";
 		this.optionsFile.style.width = this.optionsEdit.style.width = this.optionsSource.style.width = this.optionsHelp.style.width = (this.filesW-60) + "px";
-		this.filesFrame.style.height = (winH-headerH-fileNavH) + "px";
+		this.filesFrame.style.height = (winH-headerH-fileNavH-toolsBarH) + "px";
 		this.nestValid.style.left = (this.filesW+10) + "px";
 		this.versionsDisplay.style.left = (this.filesW+25) + "px";
 		this.splitPaneControls.style.left = (parseInt((winW-this.filesW)/2,10)-25-4+this.filesW) - 100 + "px";
@@ -176,8 +192,21 @@ var ICEcoder = {
 		if (!dontSetEditor) {
 			this.editor.style.width = ICEcoder.content.style.width = (winW-this.filesW) - 200 + "px";
 			ICEcoder.terminal.style.width = (winW-this.filesW) + "px";
+			ICEcoder.output.style.width = (winW-this.filesW) + "px";
+			ICEcoder.database.style.width = (winW-this.filesW) + "px";
+			ICEcoder.git.style.width = (winW-this.filesW) + "px";
 			ICEcoder.content.style.height = (winH-headerH-tabsBarH-findBarH-26) + "px";
 			ICEcoder.terminal.style.height = winH + "px";
+			ICEcoder.output.style.height = winH + "px";
+			ICEcoder.database.style.height = winH + "px";
+			ICEcoder.git.style.height = winH + "px";
+			ICEcoder.terminal.style.top = winH + "px";
+			ICEcoder.output.style.top = winH + "px";
+			ICEcoder.database.style.top = winH + "px";
+			ICEcoder.git.style.top = winH + "px";
+			if (top.ICEcoder.showingTool !== false) {
+				get(top.ICEcoder.showingTool).style.top = 0;
+			}
 
 			// Resize the CodeMirror instances to match the window size
 			setTimeout(function(){
@@ -209,8 +238,8 @@ var ICEcoder = {
 		var cM, cMdiff;
 
 		top.ICEcoder.splitPane = onOff == "on" ? true : false;
-		top.get('splitPaneControlsOff').style.opacity = top.ICEcoder.splitPane ? 0.5 : 1;
-		top.get('splitPaneControlsOn').style.opacity = top.ICEcoder.splitPane ? 1 : 0.5;
+		top.get('splitPaneControlsOff').style.opacity = top.ICEcoder.splitPane ? 0.2 : 0.5;
+		top.get('splitPaneControlsOn').style.opacity = top.ICEcoder.splitPane ? 0.5 : 0.2;
 		top.get('splitPaneNamesMain').style.opacity = top.get('splitPaneNamesDiff').style.opacity = top.ICEcoder.splitPane ? 1 : 0;
 		top.ICEcoder.setLayout();
 
@@ -260,28 +289,49 @@ var ICEcoder = {
 		},4);
 	},
 
+	// Tool show/hide toggle
+	toolShowHideToggle: function(tool) {
+		var winH;
+
+		winH = window.innerHeight;
+
+		if (["terminal","output","database","git"].indexOf(tool) > -1) {
+			// Set out of view as a start point
+			get('terminal').style.top = winH + "px";
+			get('output').style.top = winH + "px";
+			get('database').style.top = winH + "px";
+			get('git').style.top = winH + "px";
+
+			// Now set tool requested, out of view, or in view
+			get(tool).style.top = top.ICEcoder.showingTool === tool ? winH + "px" : 0;
+
+			// Carry out any extras...
+			if (tool === "terminal") {
+				// Focus on command prompt
+				setTimeout(function(){
+					top.ICEcoder.terminal.contentWindow.document.getElementById('command').focus();
+				},0);
+			}
+
+			// Note which tool we're showing
+			top.ICEcoder.showingTool = top.ICEcoder.showingTool !== tool ? tool : false;
+		}
+	},
+
 	// Doc Explorer show item
 	docExplorerShow: function(item) {
 		var cM;
 
-		if (item == "terminal") {
-			get('terminal').style.display = 'block';
-			setTimeout(function(){
-				top.ICEcoder.terminal.contentWindow.document.getElementById('command').focus();
-			},0);
-		} else {
-			get('terminal').style.display = 'none';
-			get('miniMap').style.display = item == "miniMap" ? 'block' : 'none';
-			get('functionClassList').style.display = item == "functionClassList" ? 'block' : 'none';
-			if (item == "miniMap") {
-				top.miniMapInt = setInterval(function(){
-					if (get('miniMapContent').getBoundingClientRect().height != 0) {
-						cM = top.ICEcoder.getcMInstance();
-						top.ICEcoder.setMinimapLayout(cM);
-						clearInterval(top.miniMapInt);
-					}
-				},10);
-			}
+		get('miniMap').style.display = item == "miniMap" ? 'block' : 'none';
+		get('functionClassList').style.display = item == "functionClassList" ? 'block' : 'none';
+		if (item == "miniMap") {
+			top.miniMapInt = setInterval(function(){
+				if (get('miniMapContent').getBoundingClientRect().height != 0) {
+					cM = top.ICEcoder.getcMInstance();
+					top.ICEcoder.setMinimapLayout(cM);
+					clearInterval(top.miniMapInt);
+				}
+			},10);
 		}
 	},
 
@@ -627,9 +677,60 @@ var ICEcoder = {
 	},
 
 	// On mouse down
-	cMonMouseDown: function(thisCM,cMinstance) {
+	cMonMouseDown: function(thisCM,cMinstance,evt) {
 		top.ICEcoder.mouseDownInCM = "editor";
 	},
+
+	// On context menu
+        cMonContextMenu: function(thisCM,cMinstance,evt) {
+            // Set cursor
+            var currCoords = thisCM.coordsChar({left: evt.pageX, top: evt.pageY});
+            thisCM.setCursor(currCoords);
+
+            // If CTRL key down
+            if (evt.ctrlKey) {
+                setTimeout(function() {
+                    // Get cM and word under mouse pointer
+                    var cM = thisCM;
+                    var word = (cM.getRange(cM.findWordAt(cM.getCursor()).anchor, cM.findWordAt(cM.getCursor()).head));
+
+                    // Get result and number of results for word in functions and classes from index JSON object list
+                    result = null;
+                    numResults = 0;
+                    var filePath = top.ICEcoder.openFiles[top.ICEcoder.selectedTab-1];
+	            var filePathExt = filePath.substr(filePath.lastIndexOf(".")+1);
+                    for(i in top.ICEcoder.indexData.functions[filePathExt]) {
+                        if (i === word) {
+                            result = top.ICEcoder.indexData.functions[filePathExt][i];
+                            numResults++;
+                        }
+                    };
+                    for(i in top.ICEcoder.indexData.classes[filePathExt]) {
+                        if (i === word) {
+                            result = top.ICEcoder.indexData.classes[filePathExt][i];
+                            numResults++;
+                        }
+                    };
+
+                    // If we have a single result and the cursor isn't already on the definition of it we can jump to where it's defined
+                    if (numResults === 1 && [null,"def"].indexOf(cM.getTokenTypeAt(cM.getCursor())) === -1) {
+                        top.ICEcoder.openFile(result.filePath.replace(top.docRoot,""));
+                        top.ICEcoder.goFindAfterOpenInt = setInterval(function(){
+                            if (top.ICEcoder.openFiles[top.ICEcoder.selectedTab-1] == result.filePath.replace(top.docRoot,"") && !top.ICEcoder.loadingFile) {
+                                cM = top.ICEcoder.getcMInstance();
+				setTimeout(function() {
+					top.ICEcoder.goToLine(result.range.from.line+1);
+					cM.setSelection({line: result.range.from.line, ch: result.range.from.ch}, {line: result.range.to.line, ch: result.range.to.ch});
+				},20);
+                                clearInterval(top.ICEcoder.goFindAfterOpenInt);
+                            }
+                        },20);
+                    }
+
+                    top.ICEcoder.mouseDownInCM = "editor";
+                },0);
+            }
+        },
 
 	// On drag over
 	cMonDragOver: function(thisCM,evt,cMinstance) {
@@ -659,6 +760,59 @@ var ICEcoder = {
 			}
 
 		}
+	},
+
+	// Show Function & class params tooltip
+	functionClassParamsTooltip: function(e, area) {
+	    if (top.ICEcoder.indexData) {
+		// If we have no files open, return early
+                if (top.ICEcoder.openFiles.length === 0) {
+                    get('tooltip').style.display = "none";
+                    return true;
+                }
+		    
+            	var i;
+                // Get cM instance, and the word under mouse pointer
+                var cM = top.ICEcoder.getcMInstance();
+                var coordsChar = cM.coordsChar({left: top.ICEcoder.mouseX-top.ICEcoder.maxFilesW, top: top.ICEcoder.mouseY-72});
+                var word = (cM.getRange(cM.findWordAt(coordsChar).anchor, cM.findWordAt(coordsChar).head));
+
+		// If it's not a word, return early
+		if (word === "") {
+			get('tooltip').style.display = "none";
+			return true;
+		}
+
+                // Get result and number of results for word in functions and classes from index JSON object list
+                var result = null;
+                var numResults = 0;
+                var filePath = top.ICEcoder.openFiles[top.ICEcoder.selectedTab-1];
+                var filePathExt = filePath.substr(filePath.lastIndexOf(".")+1);
+                for(i in top.ICEcoder.indexData.functions[filePathExt]) {
+                    if (i === word) {
+                        result = top.ICEcoder.indexData.functions[filePathExt][i];
+                        numResults++;
+                    }
+                };
+                for(i in top.ICEcoder.indexData.classes[filePathExt]) {
+                    if (i === word) {
+                        result = top.ICEcoder.indexData.classes[filePathExt][i];
+                        numResults++;
+                    }
+                };
+
+                // If we have a single result and the mouse pointer is not over the definition of it (that would be pointless), show tooltip
+                if (numResults === 1 && [null,"def"].indexOf(cM.getTokenTypeAt(coordsChar)) === -1) {
+                    get('tooltip').style.display = "block";
+                    get('tooltip').style.left = (top.ICEcoder.mouseX-top.ICEcoder.maxFilesW+10) + "px";
+                    get('tooltip').style.top = (top.ICEcoder.mouseY-30) + "px";
+                    get('tooltip').style.zIndex = "1";
+                    get('tooltip').innerHTML = result.params;
+                // Else hide it
+                } else {
+                    get('tooltip').style.display = "none";
+                }
+            }
 	},
 
 	// Update diffs shown to the user in each pane
@@ -950,10 +1104,11 @@ var ICEcoder = {
 	},
 
 	// Go to a specific line number
-	goToLine: function(lineNo) {
+	goToLine: function(lineNo, charNo, noFocus) {
 		var cM, cMdiff, thisCM;
 
 		lineNo = lineNo ? lineNo-1 : top.get('goToLineNo').value-1;
+		charNo = charNo ? charNo : 0;
 
 		cM = ICEcoder.getcMInstance();
 		cMdiff = ICEcoder.getcMdiffInstance();
@@ -975,10 +1130,12 @@ var ICEcoder = {
 			}
 		},10);
 
-		thisCM.setCursor(lineNo);
-		top.ICEcoder.focus();
-		// Also do this after a 0ms tickover incase DOM wasn't ready
-		setTimeout(function(){top.ICEcoder.focus();},0);
+		thisCM.setCursor(lineNo, charNo);
+		if (!noFocus) {
+			top.ICEcoder.focus();
+			// Also do this after a 0ms tickover incase DOM wasn't ready
+			setTimeout(function(){top.ICEcoder.focus();},0);
+		}
 		return false;
 	},
 
@@ -2959,7 +3116,6 @@ var ICEcoder = {
 							if (["object","both"].indexOf(top.ICEcoder.fileDirResOutput) >= 0) {
 								console.log(statusObj);
 							}
-
 							// If error, show that, otherwise do whatever we're required to do next
 							if (statusObj.status.error) {
 								top.ICEcoder.message(statusObj.status.errorMsg);
@@ -3235,7 +3391,7 @@ var ICEcoder = {
 		thisCSS[strCSS][0].style['fontSize'] = fontSize;
 
 		// Update styles in editor
-		thisCSS = ICEcoder.content.contentWindow.document.styleSheets[4];
+		thisCSS = ICEcoder.content.contentWindow.document.styleSheets[6];
 		strCSS = thisCSS.rules ? 'rules' : 'cssRules';
 		thisCSS[strCSS][0].style['fontSize'] = fontSize;
 		thisCSS[strCSS][4].style['border-left-width'] = visibleTabs ? '1px' : '0';
@@ -3402,6 +3558,11 @@ var ICEcoder = {
 	// Logout of ICEcoder
 	logout: function(type) {
 		window.location = window.location + "?logout&"+(type ? "type="+type+"&" : "")+"csrf="+top.ICEcoder.csrf;
+	},
+
+	// Show a message
+	outputMsg: function(msg) {
+		top.ICEcoder.output.innerHTML += msg + "<br>";
 	},
 
 	// Show a message
@@ -3594,6 +3755,11 @@ var ICEcoder = {
 	// Change tabs by switching visibility of instances
 	switchTab: function(newTab,noFocus) {
 		var cM, cMdiff, thisCM;
+
+		// If we're not switching to same tab (for some reason), note the previous tab
+		if (newTab !== top.ICEcoder.selectedTab) {
+			top.ICEcoder.prevTab = top.ICEcoder.selectedTab;
+		}
 
 		// Identify tab that's currently selected & get the instance
 		ICEcoder.selectedTab = newTab;
@@ -4097,6 +4263,31 @@ var ICEcoder = {
 			top.ICEcoder.cmdKey = true;
 		}
 
+		// F1 (zoom code out non declaration lines)
+		if (key === 112) {
+			if (top.ICEcoder.codeZoomedOut) {
+				return;
+			}
+			top.ICEcoder.codeZoomedOut = true;
+
+			cM = ICEcoder.getcMInstance();
+			// For every line in the current editor, add code-zoomed-out class if not a function/class declaration line
+			for (var i=0; i<cM.lineCount(); i++) {
+				var nonDeclareLine = true;
+				for (var j=0; j<top.ICEcoder.functionClassList.length; j++) {
+					if (top.ICEcoder.functionClassList[j].line == i) {
+						nonDeclareLine = false;
+					}
+				}
+				if (nonDeclareLine) {
+					cM.addLineClass(i, "wrap", "code-zoomed-out");
+				}
+			}
+			// Refresh is necessary to re-draw lines
+			cM.refresh();
+			return false;
+		};
+
 		// DEL (Delete file)
 		if (key==46 && area == "files") {
 			top.ICEcoder.deleteFiles();
@@ -4188,12 +4379,19 @@ var ICEcoder = {
 				top.ICEcoder.searchForSelected();
 	        		return false;
 
-			// CTRL/Cmd+right arrow (Next tab)
+			// CTRL/Cmd+backspace arrow (Go to previous tab selected)
+			} else if(key==8 && (evt.ctrlKey||top.ICEcoder.cmdKey)) {
+				if (top.ICEcoder.prevTab !== 0) {
+					top.ICEcoder.switchTab(top.ICEcoder.prevTab);
+				}
+	        		return false;
+
+			// CTRL/Cmd+right arrow (Tab to right)
 			} else if(key==39 && (evt.ctrlKey||top.ICEcoder.cmdKey) && area!="content") {
 				top.ICEcoder.nextTab();
 	        		return false;
 
-			// CTRL/Cmd+left arrow (Previous tab)
+			// CTRL/Cmd+left arrow (Tab to left)
 			} else if(key==37 && (evt.ctrlKey||top.ICEcoder.cmdKey) && area!="content") {
 				top.ICEcoder.previousTab();
 	        		return false;
@@ -4320,8 +4518,35 @@ var ICEcoder = {
 
 	// Reset the state of keys back to the normal state
 	resetKeys: function(evt) {
+		var key, cM;
+
+		key = evt.keyCode ? evt.keyCode : evt.which ? evt.which : evt.charCode;
+
+		if (key == 112 && top.ICEcoder.codeZoomedOut) {
+			cM = ICEcoder.getcMInstance();
+			// For every line in the current editor, remove code-zoomed-out class if not a function/class declaration line
+			for (var i=0; i<cM.lineCount(); i++) {
+				var nonDeclareLine = true;
+				for (var j=0; j<top.ICEcoder.functionClassList.length; j++) {
+					if (top.ICEcoder.functionClassList[j].line == i) {
+						nonDeclareLine = false;
+					}
+				}
+				if (nonDeclareLine) {
+					cM.removeLineClass(i, "wrap", "code-zoomed-out");
+				}
+			}
+			// Refresh is necessary to re-draw lines
+			cM.refresh();
+
+			// Go to line chosen if any
+			var cursor = cM.getCursor();
+			top.ICEcoder.goToLine(cursor.line + 1, cursor.ch, false);
+
+			top.ICEcoder.codeZoomedOut = false;
+		}
 		top.ICEcoder.cmdKey = false;
-	}, 
+	},
 
 	// Add snippet code completion
 	addSnippet: function() {

@@ -5,7 +5,7 @@ $t = $text['editor'];
 ?>
 <!DOCTYPE html>
 
-<html style="margin: 0" onMouseDown="top.ICEcoder.mouseDown=true; top.ICEcoder.resetAutoLogoutTimer()" onMouseUp="top.ICEcoder.mouseDown=false; top.ICEcoder.mouseDownInCM=false; top.ICEcoder.resetAutoLogoutTimer(); if (!top.ICEcoder.overCloseLink) {top.ICEcoder.tabDragEnd()}" onMouseMove="if(top.ICEcoder) {top.ICEcoder.getMouseXY(event,'editor'); top.ICEcoder.resetAutoLogoutTimer(); top.ICEcoder.canResizeFilesW()}" onDrop="if(top.ICEcoder) {top.ICEcoder.getMouseXY(event,'editor')}">
+<html style="margin: 0" onMouseDown="top.ICEcoder.mouseDown=true; top.ICEcoder.resetAutoLogoutTimer()" onMouseUp="top.ICEcoder.mouseDown=false; top.ICEcoder.mouseDownInCM=false; top.ICEcoder.resetAutoLogoutTimer(); if (!top.ICEcoder.overCloseLink) {top.ICEcoder.tabDragEnd()}" onMouseMove="if(top.ICEcoder) {top.ICEcoder.getMouseXY(event,'editor'); top.ICEcoder.functionClassParamsTooltip(event, 'editor'); top.ICEcoder.resetAutoLogoutTimer(); top.ICEcoder.canResizeFilesW()}" onDrop="if(top.ICEcoder) {top.ICEcoder.getMouseXY(event,'editor')}">
 <head>
 <title>ICEcoder v <?php echo $ICEcoder["versionNo"];?> editor</title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -57,7 +57,7 @@ if (array_search($ICEcoder["theme"],array("3024-day","base16-light","eclipse","e
 
 <style type="text/css">
 /* Make sure this next one remains the 1st item, updated with JS */
-.CodeMirror {position: absolute; top: 0; width: 100%; font-size: <?php echo $ICEcoder["fontSize"];?>; line-height: 1.3; z-index: 1}
+.CodeMirror {position: absolute; top: 0; width: 100%; font-size: <?php echo $ICEcoder["fontSize"];?>; transition: font-size 0.25s ease; line-height: 1.3; z-index: 1}
 .CodeMirror-scroll {} /* was: height: auto; overflow: visible */
 /* Make sure this next one remains the 3rd item, updated with JS */
 .cm-s-activeLine {background: <?php echo $activeLineBG;?> !important}
@@ -69,6 +69,7 @@ if (array_search($ICEcoder["theme"],array("3024-day","base16-light","eclipse","e
         background-position: bottom left;
         background-repeat: repeat-x;
       }
+.code-zoomed-out { font-size: 2px }
 .CodeMirror-foldmarker {font-family: arial; line-height: .3; color: #b00; cursor: pointer;
 	text-shadow: #fff 1px 1px 2px, #fff -1px -1px 2px, #fff 1px -1px 2px, #fff -1px 1px 2px;
 }
@@ -87,18 +88,12 @@ h2 {color: rgba(0,198,255,0.7)}
 .diffGreyLighter {background: #888 !important; color: #1d1d1b !important}
 .diffNone {}
 .info {font-size: 10px; color: rgba(0,198,255,0.7); cursor: help}
-.trialBarContainer {display: inline-block; width: 170px; height: 8px; background: #0b0b0b; margin-bottom: 40px}
-.trialBarRemaining {display: inline-block; width: 170px; height: 8px; background: rgba(0,198,255,0.7); box-shadow: 0 0 10px 1px rgba(0,198,255,0.5);
-	transition: width 0.7s ease-in-out;
-}
-.trialBarText {margin-top: 6px; color: #888}
-.trialBarText a {color: #fff; text-decoration: none}
 </style>
 <link rel="stylesheet" href="lib/file-types.css?microtime=<?php echo microtime(true);?>">
 <link rel="stylesheet" href="lib/file-type-icons.css?microtime=<?php echo microtime(true);?>">
 </head>
 
-<body style="color: #fff; margin: 0" onKeyDown="return top.ICEcoder.interceptKeys('content', event);" onKeyUp="top.ICEcoder.resetKeys(event);" onBlur="parent.ICEcoder.resetKeys(event);" onload="if (document.getElementById('trialBarRemaining')) {setTimeout(function(){document.getElementById('trialBarRemaining').style.width = '<?php echo $tRemainingPerc*170;?>px';},150)}">
+<body style="color: #fff; margin: 0" onKeyDown="return top.ICEcoder.interceptKeys('content', event);" onKeyUp="top.ICEcoder.resetKeys(event);" onBlur="parent.ICEcoder.resetKeys(event);" oncontextmenu="return false">
 
 <div style="display: none; margin: 32px 43px 0 43px; padding: 10px; width: 500px; font-family: arial; font-size: 10px; color: #ddd; background: #333" id="dataMessage"></div>
 
@@ -123,15 +118,6 @@ h2 {color: rgba(0,198,255,0.7)}
 	</div>
 
 	<div style="float: left">
-		<?php
-		// No valid license code - show the trial remaining bar
-		if (generateHash(strClean($ICEcoder['licenseEmail']),$ICEcoder['licenseCode'])!=$ICEcoder['licenseCode']) {?>
-		<h2><?php echo $t['trial remaining'];?></h2>
-		<div class="trialBarContainer"><div class="trialBarRemaining" id="trialBarRemaining"></div><br>
-			<div class="trialBarText"><?php echo $tDaysRemaining;?> <?php echo $t['days left'];?> - <a href="lib/login.php?get=code&csrf=<?php echo $_SESSION["csrf"];?>" target="_parent">Unlock now</a></div>
-		</div>
-		<?php ;}; ?>
-
 		<h2><?php echo $t['files'];?></h2>
 		<span class="heading"><?php echo $t['Last 10 files...'];?></span><br>
 		<ul class="fileManager" id="last10Files" style="margin-left: 0; line-height: 20px"><?php
@@ -199,6 +185,7 @@ CodeMirror.keyMap.ICEcoder = {
 	"Ctrl-Space": "autocomplete",
 	"Ctrl-Up" : false,
 	"Ctrl-Down" : false,
+	"Ctrl-Backspace" : false,
 	"Esc" : false,
 	fallthrough: ["default"]
 };
@@ -297,8 +284,12 @@ function createNewCMInstance(num) {
 	window['cM'+num+'diff']	.on("gutterClick", function(thisCM,line,gutter,evt) {top.ICEcoder.cMonGutterClick(thisCM,line,gutter,evt,'cM'+num+'diff')});
 
 	// Mouse Down
-	window['cM'+num]	.on("mousedown", function(thisCM) {top.ICEcoder.cMonMouseDown(thisCM,'cM'+num)});
-	window['cM'+num+'diff']	.on("mousedown", function(thisCM) {top.ICEcoder.cMonMouseDown(thisCM,'cM'+num+'diff')});
+	window['cM'+num]	.on("mousedown", function(thisCM,evt) {top.ICEcoder.cMonMouseDown(thisCM,'cM'+num,evt)});
+	window['cM'+num+'diff']	.on("mousedown", function(thisCM,evt) {top.ICEcoder.cMonMouseDown(thisCM,'cM'+num+'diff',evt)});
+
+	// Context Menu
+	window['cM'+num]	.on("contextmenu", function(thisCM,evt) {top.ICEcoder.cMonContextMenu(thisCM,'cM'+num,evt)});
+	window['cM'+num+'diff']	.on("contextmenu", function(thisCM,evt) {top.ICEcoder.cMonContextMenu(thisCM,'cM'+num+'diff',evt)});
 
 	// Drag Over
 	window['cM'+num]	.on("dragover", function(thisCM) {top.ICEcoder.cMonDragOver(thisCM,event,'cM'+num)});

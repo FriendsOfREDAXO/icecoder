@@ -12,7 +12,7 @@ if ($ICEcoder["checkUpdates"]) {
 		$icvData = "1.0\nICEcoder version placeholder";
 	}
 	$icvInfo = explode("\n", $icvData);
-	$icv = $icvInfo[0];
+	$icv = $icvInfo[0]*1;
 	$icvI = str_replace('"','\\\'',$icvInfo[1]);
 	$thisV = $ICEcoder["versionNo"];
 	if (strpos($thisV,"beta")>-1 && !strpos($icv,"beta") && str_replace(" beta","",$thisV) == $icv) {$thisV-=0.1;};
@@ -304,28 +304,37 @@ $t = $text['index'];
 			</div>
 			<input type="hidden" name="csrf" value="<?php echo $_SESSION["csrf"]; ?>">
 		</form>
-		<form onSubmit="return ICEcoder.goToLine()">
+		<form onSubmit="return ICEcoder.goToLine(top.get('goToLineNo').value, 0, false)">
 			<div class="codeAssist" title="<?php echo $t['Turn on/off...'];?>">
 				<input type="checkbox" name="codeAssist" id="codeAssist" class="codeAssistCheckbox" <?php if ($ICEcoder['codeAssist']) {echo 'checked ';};?>>
 				<span class="codeAssistDisplay" id="codeAssistDisplay" style="background-position: <?php echo $ICEcoder['codeAssist'] ? "0" : "-16";?> 0" onClick="top.ICEcoder.codeAssistToggle()"></span> <?php echo $t['Code Assist'];?>
 			</div>
-			<div class="goLine"><?php echo $t['Go to Line'];?> <input type="text" name="goToLine" value="" id="goToLineNo" class="textbox goToLine">
+			<div class="goLine"><?php echo $t['Go to Line'];?> <input type="text" name="goToLine" value="" id="goToLineNo" onkeyup="ICEcoder.goToLine(this.value, 0, true)" class="textbox goToLine">
 			<div class="view" title="<?php echo $t['View'];?>" onClick="top.ICEcoder.openPreviewWindow()" id="fMView"></div>
 			<div class="bug" title="<?php echo $t['Bug reporting not active'];?>" onClick="top.ICEcoder.openBugReport()" id="bugIcon"></div>
 			<div class="minimapLink" onclick="top.ICEcoder.docExplorerShow('miniMap')"></div>
 			<div class="functionClassListLink" onclick="top.ICEcoder.docExplorerShow('functionClassList')"></div>
-			<div class="terminalLink" onclick="top.ICEcoder.docExplorerShow('terminal')"></div>
 			<input type="hidden" name="csrf" value="<?php echo $_SESSION["csrf"]; ?>">
 		</form>
 	</div>
-	<iframe name="terminalFrame" id="terminal" src="terminal.php" frameborder="0" style="position: fixed; display: none; top: 0; z-index: 2"></iframe>
+	<iframe name="terminalFrame" id="terminal" src="terminal.php" class="terminal"></iframe>
+	<pre id="output" class="output"><b>Output</b><br>via top.ICEcoder.output(message);<br><br></pre>
+	<iframe name="databaseFrame" id="database" src="lib/database.php" class="database"></iframe>
+	<div id="git" class="git">Git diff integration coming soon</div>
 	<iframe name="contentFrame" id="content" src="editor.php" class="code" scrolling="no"></iframe>
+</div>
+
+<div class="tools" id="tools">
+	<div onclick="top.ICEcoder.toolShowHideToggle('terminal')">Terminal</div>
+	<div onclick="top.ICEcoder.toolShowHideToggle('output')">Output</div>
+	<div onclick="top.ICEcoder.toolShowHideToggle('database')">Database</div>
+	<div onclick="top.ICEcoder.toolShowHideToggle('git')">Git</div>
 </div>
 
 <div class="footer" id="footer" onContextMenu="return false">
 	<div class="nesting" id="nestValid"></div>
 	<div class="versionsDisplay" id="versionsDisplay" onclick="top.ICEcoder.versionsScreen(top.ICEcoder.openFiles[top.ICEcoder.selectedTab-1].replace(/\//g,'|'))"></div>
-	<div class="splitPaneControls" id="splitPaneControls"><div class="off" id="splitPaneControlsOff" title="<?php echo $t['Single pane'];?>" onclick="top.ICEcoder.setSplitPane('off')"></div><div class="on" id="splitPaneControlsOn" title="<?php echo $t['Diff pane also'];?>" onclick="top.ICEcoder.setSplitPane('on')" style="opacity: 0.5"></div></div>
+	<div class="splitPaneControls" id="splitPaneControls"><div class="off" id="splitPaneControlsOff" title="<?php echo $t['Single pane'];?>" onclick="top.ICEcoder.setSplitPane('off')" style="opacity: 0.5"></div><div class="on" id="splitPaneControlsOn" title="<?php echo $t['Diff pane also'];?>" onclick="top.ICEcoder.setSplitPane('on')" style="opacity: 0.2"></div></div>
 	<div class="splitPaneNames" id="splitPaneNamesMain">Main Pane</div>
 	<div class="splitPaneNames" id="splitPaneNamesDiff">Diff Pane</div>
 	<div class="byteDisplay" id="byteDisplay" style="display: none" onClick="top.ICEcoder.showDisplay('char')"></div>
@@ -336,6 +345,8 @@ $t = $text['index'];
 	<div class="miniMap" id="miniMap"><div class="miniMapContainer" id="miniMapContainer"></div><div class="miniMapContent" id="miniMapContent"></div></div>
 	<div class="functionClassList" id="functionClassList"></div>
 </div>
+
+<div id="tooltip" style="position: absolute; display: none; top: 0; left: 0; padding: 5px; background: #444; color: #bbb"></div>
 
 <script>
 ICEcoder.initAliases();

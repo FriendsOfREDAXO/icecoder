@@ -18,7 +18,7 @@ echo "<b>Test date, time & microtime:</b><br>".date("jS M Y g:i:sa")." (".microt
 $success = 0;
 
 
-echo '<b>TEST 1 of 3: PHP Version:</b><br>ICEcoder needs at least PHP 5.0, tho 5.3 and above is recommended:<br><br>';
+echo '<b>TEST 1 of 3: PHP Version:</b><br>ICEcoder needs at least PHP 5.0, though 5.3 and above is recommended:<br><br>';
 echo "Your PHP Version: ".phpversion()."<br><br>";
 
 echo '<b>TEST RESULT:</b> ';
@@ -64,7 +64,7 @@ echo '<b>TEST 3 of 3: Includes:</b><br>Attempt to include settings file:<br><br>
 $configSettings = 'config___settings.php';
 
 // Load config settings
-include(dirname(__FILE__)."/lib/".$configSettings);
+include(dirname(__FILE__)."/data/".$configSettings);
 
 echo "This version of ICEcoder is: ".$ICEcoderSettings['versionNo']."<br><br>";
 echo '<b>TEST RESULT:</b> ';

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 include("headers.php");
 include("settings.php");
 $t = $text['settings-screen'];
@@ -15,7 +15,7 @@ $t = $text['settings-screen'];
 <script src="../<?php echo $ICEcoder["codeMirrorDir"]; ?>/lib/codemirror-compressed.js?microtime=<?php echo microtime(true);?>"></script>
 
 <style type="text/css">
-.CodeMirror {position: absolute; width: 409px; height: 180px; font-size: <?php echo $ICEcoder["fontSize"];?>}
+.CodeMirror {position: absolute; width: 409px; height: 180px; font-size: <?php echo $ICEcoder["fontSize"];?>; transition: font-size 0.25s ease}
 .CodeMirror-scroll {overflow: hidden}
 /* Make sure this next one remains the 3rd item, updated with JS */
 .cm-tab {border-left-width: <?php echo $ICEcoder["visibleTabs"] ? "1px" : "0";?>; margin-left: <?php echo $ICEcoder["visibleTabs"] ? "-1px" : "0";?>; border-left-style: solid; border-left-color: rgba(255,255,255,0.2)}
@@ -163,7 +163,7 @@ for ($i=0;$i<count($themeArray);$i++) {
 		<div style="padding: 5px 5px 5px 5px; color: #888">
 		<?php
 		// Display number of days backups available
-		$backupDirBase = str_replace("\\","/",dirname(__FILE__))."/../backups/";
+		$backupDirBase = str_replace("\\","/",dirname(__FILE__))."/../data/backups/";
 		$backupDirHost = isset($ftpSite) ? parse_url($ftpSite,PHP_URL_HOST) : "localhost";
 		$backupDirsList = scandir($backupDirBase.$backupDirHost);
 		// Remove . and .. from array

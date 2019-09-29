@@ -162,7 +162,6 @@ function stitchChanges($fileLines) {
 	return $contents;
 }
 
-
 // ============
 // SAVING FILES
 // ============
@@ -269,7 +268,7 @@ if (!$error && $_GET['action']=="save") {
 					$ftpFilepath = ltrim($fileLoc."/".$fileName,"/");
 					if (isset($_POST['changes'])) {
 						// Get existing file contents as lines
-						$loadedFile = toUTF8noBOM(ftpGetContents($ftpConn, $ftpRoot.$fileLoc."/".$fileName, $ftpMode));
+						$loadedFile = toUTF8noBOM(ftpGetContents($ftpConn, $ftpRoot.$fileLoc."/".$fileName, $ftpMode),false);
 						$fileLines = explode("\n",str_replace("\r","",$loadedFile));
 						// Need to add a new line at the end of each because explode will lose them,
 						// want want to end up with same array that 'file($file)' produces for a local file
@@ -359,7 +358,7 @@ if (!$error && $_GET['action']=="save") {
 					$backupDirFormat = "Y-m-d";
 
 					// Establish the base, host and date dir parts...
-					$backupDirBase = str_replace("\\","/",dirname(__FILE__))."/../backups/";
+					$backupDirBase = str_replace("\\","/",dirname(__FILE__))."/../data/backups/";
 					$backupDirHost = isset($ftpSite) ? parse_url($ftpSite,PHP_URL_HOST) : "localhost";
 					$backupDirDate = date($backupDirFormat);
 
@@ -1009,4 +1008,6 @@ echo '{
 		"errorMsg" : "'.$errorMsg.'"
 	}
 }';
-?>
+
+// Set timestamp of last index to 0 to force a re-index next time we index
+requireReIndexNextTime();
