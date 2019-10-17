@@ -1,4 +1,5 @@
 <?php
-if (rex_string::versionCompare($this->getVersion(), '2.0', '<')) {
-throw new rex_functional_exception('Please uninstall old version and install the new version');
-}
+// delete old Version
+rex_dir::delete(rex_path::frontend('icecoder'));
+// start install
+include_once (__DIR__ . '/install.php');
