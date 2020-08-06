@@ -4,8 +4,8 @@ include("lib/settings.php");
 $t = $text['index'];
 
 $updateMsg = '';
-// Check for updates
-if ($ICEcoder["checkUpdates"]) {
+// Check for updates disabled
+if (false && $ICEcoder["checkUpdates"]) {
 	$icv_url = "https://icecoder.net/latest-version?thisVersion=".$ICEcoder["versionNo"];
 	$icvData = getData($icv_url,'curl',false,5);
 	if ($icvData == "no data") {
