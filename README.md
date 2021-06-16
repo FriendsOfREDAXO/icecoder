@@ -24,16 +24,15 @@ To install the AddOn, use the REDAXO Installer or install the current release fr
 
 ## Authors
 
-* [Oliver Kreischer](https://github.com/olien)
 * [Markus Staab](https://github.com/staabm)
+* [Thomas Skerbis](https://github.com/skerbis)
 
 **Friends Of REDAXO**
 * http://www.redaxo.org
 * https://github.com/FriendsOfREDAXO
 
-**Project Lead**
 
-[Thomas Skerbis](https://github.com/skerbis)
+
 
 
 
