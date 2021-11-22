@@ -1,4 +1,6 @@
 <?php
+die("Updater system unused till a future point in time");
+
 include("headers.php");
 include("settings.php");
 $t = $text['updater'];
@@ -71,19 +73,19 @@ function copyOldVersion() {
 			}
 		}
 	}
-	$icv_url = "https://icecoder.net/latest-version.txt";
+	$icvURL = "https://icecoder.net/latest-version.txt";
 	echo 'Detecting current version of ICEcoder...<br>';
-	$icvInfo = getData($icv_url,'curl','Sorry, couldn\'t figure out latest version.');
+	$icvInfo = getData($icvURL,'curl','Sorry, couldn\'t figure out latest version.');
 	echo 'Latest version of ICEcoder is '.$icvInfo.'<br>';
 	openZipNew($icvInfo);
 }
 
 function openZipNew($icvInfo) {
 	echo 'Retrieving zip from ICEcoder site...<br>';
-	$source = 'ICEcoder v'.$icvInfo;
+	$source = 'ICEcoder '.$icvInfo;
 	$target = '../';
 
-	$remoteFile = 'https://icecoder.net/ICEcoder-v'.(str_replace(" beta", "-beta",$icvInfo)).'.zip';
+	$remoteFile = 'https://icecoder.net/ICEcoder-'.(str_replace(" beta", "-beta",$icvInfo)).'.zip';
     	$file = "../tmp/new-version.zip";
 	$fileData = getData($remoteFile,'curl','Sorry, couldn\'t get latest version zip file.');
 	echo 'Storing zip file...<br>';
@@ -144,11 +146,11 @@ function transposeSettings($oldFile,$newFile,$saveFile) {
 		$contentLine = $newSettingsArray[$i].PHP_EOL;
 		for ($j=0; $j<count($oldSettingsArray); $j++) {
 			// And override with old setting if not blank, not in excluded array and we have a match
-			if ($thisKey != "" && $thisKey != "versionNo" && $thisKey != "codeMirrorDir" && strpos($oldSettingsArray[$j],'"'.$thisKey.'"') > -1) {
+			if ($thisKey != "" && $thisKey != "versionNo" && strpos($oldSettingsArray[$j],'"'.$thisKey.'"') > -1) {
 				$contentLine = $oldSettingsArray[$j].PHP_EOL;
 				// If the old setting we're copying over isn't replacing the last line and doesn't end in a comma (after an rtrim to remove line endings), and doesn't contain a comment, add one
 				if ($i != count($newSettingsArray)-1 && substr(rtrim($contentLine),-1) != "," && strpos($contentLine,"//") == -1) {
-					$contentLine = str_replace(PHP_EOL,",".PHP_EOL,$contentLine);	
+					$contentLine = str_replace(PHP_EOL,",".PHP_EOL,$contentLine);
 				}
 			}
 		}
@@ -169,6 +171,7 @@ function copyOverSettings($icvInfo) {
 	// The reason we create it, is so it has PHP write permissions, meaning we can update it later
 	if (!file_exists(dirname(__FILE__)."/../data/".$configSettings)) {
 		echo 'Creating new settings file...<br>';
+		// TODO: Needs overhauling as newConfigSettingsFile no longer exists
 		// Include our params to make use of (as $newConfigSettingsFile)
 		include(dirname(__FILE__)."/settings-system-params.php");
 		if ($fConfigSettings = fopen(dirname(__FILE__)."/../data/".$configSettings, 'w')) {
@@ -178,18 +181,18 @@ function copyOverSettings($icvInfo) {
 			die("Cannot update config file data/".$configSettings.". Please check write permissions on data/ and try again");
 		}
 	}
-	transposeSettings(PATH."data/template-system.php","config-settings.php","config-settings.php");
+	transposeSettings(PATH."data/template-config-global.php","config-global.php","config-global.php");
 
 	// Users template settings
 	echo 'Transposing users template settings...<br>';
-	transposeSettings(PATH."data/template-users.php","template-users.php","template-users.php");
+	transposeSettings(PATH."data/template-config-users.php","template-config-users.php","template-config-users.php");
 
 	// Users settings files
 	$fileList = scanDir(PATH."data/");
 	for ($i=0; $i<count($fileList); $i++) {
 		if (strpos($fileList[$i],"config-") > -1) {
 			echo 'Transposing users settings file '.$fileList[$i].'...<br>';
-			transposeSettings(PATH."data/".$fileList[$i],"template-users.php",$fileList[$i]);
+			transposeSettings(PATH."data/".$fileList[$i],"template-config-users.php",$fileList[$i]);
 		}
 	}
 
@@ -204,7 +207,7 @@ if ($updateDone) {
 	echo '<script>alert("'.$t['Update appears to...'].'");window.location = "../?display=updated&csrf='.$_SESSION["csrf"].'";</script>';
 } else {
 	echo 'Something appears to have gone wrong :-/<br><br>';
-	echo 'Please report bugs at <a href=\"https://github.com/ICEcoder/ICEcoder\" style=\"color: #fff\">https://github.com/ICEcoder/ICEcoder</a><br><br>';
+	echo 'Please report bugs at <a href=\"https://github.com/icecoder/ICEcoder\" style=\"color: #fff\">https://github.com/icecoder/ICEcoder</a><br><br>';
 	echo 'You can recover the old version from ICEcoder\'s tmp dir';
 }
 ?>

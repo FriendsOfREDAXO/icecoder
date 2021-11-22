@@ -1,5 +1,5 @@
 package: icecoder
-version: '2.0.2'
+version: '3.0.0-beta1'
 author: Friends Of REDAXO
 supportpage: https://github.com/FriendsOfREDAXO/icecoder
 
@@ -12,4 +12,5 @@ page:
 requires:
     redaxo: ^5.7.0
     php:
+        version: '>=7.3, <9'
         extensions: [curl]

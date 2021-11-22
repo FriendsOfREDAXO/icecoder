@@ -1,7 +1,5 @@
 # [ICEcoder ](https://icecoder.net) Addon for REDAXO 
 
-⚠️ Hilfe erwünscht zum Umbau auf die aktuelle Version
-
 ## Web IDE / browser code editor awesomeness
 
 ICEcoder is a web IDE / browser based code editor, extensible through plugins, 
