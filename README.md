@@ -1,4 +1,6 @@
-# [ICEcoder ](https://icecoder.net) Addon for REDAXO [DEPRECATED]
+# [ICEcoder ](https://icecoder.net) Addon for REDAXO 
+
+⚠️ Hilfe erwünscht zum Umbau auf die aktuelle Version
 
 ## Web IDE / browser code editor awesomeness
 
