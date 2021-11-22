@@ -30,8 +30,6 @@ if (!$json || !($result = json_decode($json)) || !$result) {
 }
 // END OF REDAXO-CODE
 // Now follows original index
-?>
-<?php
 // Version 8.1 	
 use ICEcoder\ExtraProcesses;
 
