@@ -14,6 +14,7 @@ $index = rex_file::get($this->getPath('ice_index.php'));
 $index = str_replace('%%HOST%%', $_SERVER['HTTP_HOST'], $index);
 rex_file::put(rex_path::frontend('icecoder/index.php'), $index);
 
+// set global config
 $config = rex_file::get($this->getPath('config__global.php'));
 rex_file::put(rex_path::frontend('icecoder/data/config-global.php'), $config);
 
