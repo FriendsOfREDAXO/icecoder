@@ -30,6 +30,8 @@ if (!$json || !($result = json_decode($json)) || !$result) {
     echo('Login nur als REDAXO Admin erlaubt!');
     die();
 }
+// END OF REDAXO-CODE
+// Now follows original index
 ?>
 <?php
 // Version 8.1 	
