@@ -10,7 +10,5 @@ function adminer_object() {
     return new AdminerPlugin($plugins);
 }
 
-// include original Adminer or Adminer Editor
-// include "./database-adminer-481-en.php";
-// disabled becaus problems on Safari. 
+include "./database-adminer-481-en.php";
 ?>
