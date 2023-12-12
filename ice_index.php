@@ -25,7 +25,7 @@ if ($error = curl_error($curl)) {
 curl_close($curl);
 
 if (!$json || !($result = json_decode($json)) || !$result) {
-    echo('Login nur als REDAXO Admin erlaubt!');
+    header("HTTP/1.0 404 Not Found");
     die();
 }
 // END OF REDAXO-CODE
